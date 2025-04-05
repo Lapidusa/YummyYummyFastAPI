@@ -37,27 +37,24 @@ async def verify_code(request: VerifyCodeRequest, db: AsyncSession = Depends(get
     if not await UserService.check_users(db):
       new_user = await UserService.create_new_user(db, request.phone_number)
       token = await SecurityMiddleware.generate_jwt_token(str(new_user.id))
-      return {"user": new_user, "token": token}
+      return ResponseUtils.success(data={"user": new_user, "token": token})
 
     result = await db.execute(select(User).where(User.phone_number == request.phone_number))
     user = result.scalar_one_or_none()
 
     if user:
       token = await SecurityMiddleware.generate_jwt_token(str(user.id))
-      return {"user": user, "token": token}
+      return ResponseUtils.success(data={"user": user, "token": token})
     else:
       new_user = await UserService.create_new_user(db, request.phone_number)
       token = await SecurityMiddleware.generate_jwt_token(str(new_user.id))
-      return {"user": new_user, "token": token}
+      return ResponseUtils.success(data={"user": new_user, "token": token})
   return ResponseUtils.error(message="Неверный код или код истек")
 
 @router.get("/get-user/")
 async def get_user(token: str = Header(alias="token"), db: AsyncSession = Depends(get_db)):
   user = await SecurityMiddleware.get_current_user(token, db)
-  if user:
-    return ResponseUtils.success(data=user)
-  else:
-    return ResponseUtils.error(message="Не найден пользователь")
+  return ResponseUtils.success(user=user) if user else ResponseUtils.error(message="Не найден пользователь")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 @router.post("/logout/")

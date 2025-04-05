@@ -4,7 +4,7 @@ from sqlalchemy.orm import relationship, declared_attr
 import uuid
 from enum import Enum as PyEnum
 from app.db.base import Base
-from app.db.models.ingredient import product_ingredients
+from app.db.models.ingredient import pizza_ingredients, Ingredient
 
 product_categories = Table(
     'product_categories',
@@ -56,9 +56,11 @@ class Pizza(Product):
   __tablename__ = 'pizzas'
 
   id = Column(UUID(as_uuid=True), ForeignKey('products.id'), primary_key=True)
-  ingredients = relationship("Ingredient", secondary=product_ingredients, back_populates="products")
+  ingredients = relationship("Ingredient", secondary=pizza_ingredients,
+                             back_populates="pizzas")  # Связь с ингредиентами
   dough = Column(ENUM(Dough, name="dough", create_type=True), default=Dough.THICK_DOUGH, nullable=False)
 
   __mapper_args__ = {
     'polymorphic_identity': 'pizza',  # Указываем идентификатор для полиморфизма
   }
+  Ingredient.pizzas = relationship("Pizza", secondary=pizza_ingredients, back_populates="ingredients")
